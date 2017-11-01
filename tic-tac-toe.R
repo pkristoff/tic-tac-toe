@@ -129,12 +129,8 @@ NNvsRandom <- function(num) {
           0.019564,
           0.069865,
           0.033497,
-          0.081025,
-          -0.013193,
-          0.083981,
-          -0.069655,
-          -0.038064,
-          -0.083860
+          0.081025,-0.013193,
+          0.083981,-0.069655,-0.038064,-0.083860
         ),
         nrow = 1,
         ncol = 11
@@ -226,21 +222,6 @@ GetSide <- function(isX, isY) {
   }
 }
 
-IsMachineTurn <- function (board) {
-  numX <- 0
-  numY <- 0
-  for (rowNum in 1:3) {
-    for (colNum in 1:3) {
-      if (board[rowNum, colNum] == 1) {
-        numX <- numX + 1
-      } else if (board[rowNum, colNum]) {
-        numY <- numY + 1
-      }
-    }
-  }
-  numX != numY
-}
-
 library(xtable)
 
 cbCol1 <- 3
@@ -252,60 +233,70 @@ ui <- pageWithSidebar(
   sidebarPanel(shinyjs::useShinyjs(),
                fixedRow(
                  column(
-                   9,style = "background-color:pink;",
+                   9,
+                   style = "background-color:pink;",
                    fixedRow(
                      column(
-                       cbCol1, style = "background-color:aqua;",
+                       cbCol1,
+                       style = "background-color:aqua;",
                        checkboxInput("Cell_1_1_X", "X", FALSE),
                        checkboxInput("Cell_1_1_O", "O", FALSE)
                      )
                      ,
                      column(
-                       cbCol2, style = "background-color:aqua;",
+                       cbCol2,
+                       style = "background-color:aqua;",
                        checkboxInput("Cell_1_2_X", "X", FALSE),
                        checkboxInput("Cell_1_2_O", "O", FALSE)
                      )
                      ,
                      column(
-                       cbCol3, style = "background-color:aqua;",
+                       cbCol3,
+                       style = "background-color:aqua;",
                        checkboxInput("Cell_1_3_X", "X", FALSE),
                        checkboxInput("Cell_1_3_O", "O", FALSE)
                      )
                    ),
                    fixedRow(
                      column(
-                       cbCol1, style = "background-color:aqua;",
+                       cbCol1,
+                       style = "background-color:aqua;",
                        checkboxInput("Cell_2_1_X", "X", FALSE),
                        checkboxInput("Cell_2_1_O", "O", FALSE)
                      )
                      ,
                      column(
-                       cbCol2, style = "background-color:aqua;",
+                       cbCol2,
+                       style = "background-color:aqua;",
                        checkboxInput("Cell_2_2_X", "X", FALSE),
                        checkboxInput("Cell_2_2_O", "O", FALSE)
                      )
                      ,
                      column(
-                       cbCol3, style = "background-color:aqua;",
+                       cbCol3,
+                       style = "background-color:aqua;",
                        checkboxInput("Cell_2_3_X", "X", FALSE),
                        checkboxInput("Cell_2_3_O", "O", FALSE)
                      )
                    ),
                    fixedRow(
                      column(
-                       cbCol1, style = "background-color:aqua;",
+                       cbCol1,
+                       style = "background-color:aqua;",
                        checkboxInput("Cell_3_1_X", "X", FALSE),
                        checkboxInput("Cell_3_1_O", "O", FALSE)
                      )
                      ,
                      column(
-                       cbCol2, style = "background-color:aqua;",
+                       cbCol2,
+                       style = "background-color:aqua;",
                        checkboxInput("Cell_3_2_X", "X", FALSE),
                        checkboxInput("Cell_3_2_O", "O", FALSE)
                      )
                      ,
                      column(
-                       cbCol3, style = "background-color:aqua;",
+                       cbCol3,
+                       style = "background-color:aqua;",
                        checkboxInput("Cell_3_3_X", "X", FALSE),
                        checkboxInput("Cell_3_3_O", "O", FALSE)
                      )
@@ -313,26 +304,18 @@ ui <- pageWithSidebar(
                  )
                )),
 
-  mainPanel( fixedRow(
+  mainPanel(fixedRow(
     column(
-      12, #style = "background-color:pink;",
-      fixedRow(
-        column(
-          3, style = "background-color:aqua;",uiOutput('board')
-        )),
-      fixedRow(
-        column(
-          3, style = "background-color:aqua;",textOutput('xWinsText')
-        )),
-      fixedRow(
-        column(
-          3, style = "background-color:aqua;",textOutput('oWinsText')
-        )),
-      fixedRow(
-        column(
-          3, style = "background-color:aqua;",actionButton("startNewGame", "Start New Game")
-        ))
-      )))
+      12,
+      #style = "background-color:pink;",
+      fixedRow(column(3, style = "background-color:aqua;", uiOutput('board'))),
+      fixedRow(column(3, style = "background-color:aqua;", textOutput('xWinsText'))),
+      fixedRow(column(3, style = "background-color:aqua;", textOutput('oWinsText'))),
+      fixedRow(column(
+        3, style = "background-color:aqua;", actionButton("startNewGame", "Start New Game")
+      ))
+    )
+  ))
 )
 
 server <- function(input, output, session) {
@@ -342,11 +325,34 @@ server <- function(input, output, session) {
   computerSide <- 0
   xWins <- 0
   oWins <- 0
+
+  IsMachineTurn <- function (board) {
+    # length(which(board == computerSide)) > length(which(board == humanSide))
+    if (computerSide != humanSide) {
+      numX <- 0
+      numO <- 0
+      for (rowNum in 1:3) {
+        for (colNum in 1:3) {
+          if (board[rowNum, colNum] == computerSide) {
+            numX <- numX + 1
+          } else if (board[rowNum, colNum] == humanSide) {
+            numO <- numO + 1
+          }
+        }
+      }
+      print(paste("numX=", numX, "numO=", numO))
+      numX != numO
+    } else {
+      FALSE
+    }
+  }
   SetHumanSide <- function(board) {
-    if (length(which(board == xSide)) > length(which(board == oSide))) {
+    xLen <- length(which(board == xSide))
+    oLen <- length(which(board == oSide))
+    if (xLen > oLen) {
       humanSide <<- xSide
       computerSide <<- oSide
-    } else {
+    } else if (xLen < oLen) {
       humanSide <<- oSide
       computerSide <<- xSide
     }
@@ -366,14 +372,21 @@ server <- function(input, output, session) {
       board
     })
   }
-  UpdateInputForMove <- function(localBoard, move) {
-    cell <- UICellForIndex(move)[[2]]
-    updateCheckboxInput(session, cell, label = "O", value = TRUE)
+  UpdateInputForMove <- function(localBoard, move, side) {
+    if (side == xSide) {
+      cellIndex <- 1
+      labelText <- "X"
+    } else {
+      cellIndex <- 2
+      labelText <- "O"
+      }
+    cell <- UICellForIndex(move)[[cellIndex]]
+    updateCheckboxInput(session, cell, label = labelText, value = TRUE)
   }
   DisableWholeBoard <- function(localBoard, enableWidget) {
     for (index in 1:9) {
       cells = UICellForIndex(index)
-      if (enableWidget){
+      if (enableWidget) {
         shinyjs::disable(cells[[1]])
         shinyjs::disable(cells[[2]])
       } else {
@@ -389,18 +402,20 @@ server <- function(input, output, session) {
         shinyjs::disable(cells[[1]])
         shinyjs::disable(cells[[2]])
       }
-      if (computerSide == xSide){
+      if (computerSide == xSide) {
         shinyjs::disable(cells[[1]])
-      } else if (computerSide == oSide){
+      } else if (computerSide == oSide) {
         shinyjs::disable(cells[[2]])
       }
     }
   }
 
-  ResetGame <- function(){
+  ResetGame <- function() {
     print("ResetGame")
     DisableWholeBoard(localBoard, FALSE)
-    for(index in 1:9){
+    humanSide <<- 0
+    computerSide <<- 0
+    for (index in 1:9) {
       cells <- UICellForIndex(index)
       updateCheckboxInput(session, cells[[1]], label = "X", value = FALSE)
       updateCheckboxInput(session, cells[[2]], label = "O", value = FALSE)
@@ -430,12 +445,8 @@ server <- function(input, output, session) {
         0.019564,
         0.069865,
         0.033497,
-        0.081025,
-        -0.013193,
-        0.083981,
-        -0.069655,
-        -0.038064,
-        -0.083860
+        0.081025,-0.013193,
+        0.083981,-0.069655,-0.038064,-0.083860
       ),
       nrow = 1,
       ncol = 11
@@ -449,22 +460,22 @@ server <- function(input, output, session) {
   board <- UpdateBoard(input)
 
   output$board <- renderTable({
-
     localBoard <- board()
-    if (IsMachineTurn(localBoard) && humanSide == 0) {
+    if (humanSide == 0) {
       SetHumanSide(localBoard)
+      print(paste("humanSide=", humanSide, "xSide=", xSide, "oSide=", oSide))
     }
     winner <- EvaluateBoard(localBoard)
     if (winner == 0 &&
         IsMachineTurn(localBoard) && IsMovePossible(localBoard)) {
-      # print(DisplayBoard(localBoard))
+      print(paste("Move happening: computerSide=", computerSide))
       x <- Move(tic.ai, localBoard, computerSide)
       localBoard <- x[[1]]
       move <- x[[2]]
-      UpdateInputForMove(localBoard, move)
+      UpdateInputForMove(localBoard, move, computerSide)
     }
-    print(DisplayBoard(localBoard))
-    print(paste("winner=",winner))
+    # print(DisplayBoard(localBoard))
+    # print(paste("winner=",winner))
     if (winner != 0) {
       if (winner == xSide) {
         xWins <<- xWins + 1
@@ -481,11 +492,11 @@ server <- function(input, output, session) {
     xtable(matrix(
       factor(
         localBoard,
-        levels = c(-1, 0, 1),
+        levels = c(xSide, 0, oSide),
         labels = c("X", "*", "O")
       ),
-      ncol = 3,
-      nrow = 3
+      ncol = board.size,
+      nrow = board.size
     ))
   })
 }

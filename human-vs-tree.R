@@ -7,16 +7,6 @@ library(shinyjs)
 GenerateShinyBoard <- function(data) {
   matrix(data, ncol = board.size, nrow = board.size)
 }
-GetSide <- function(isX, isY) {
-  if (isX) {
-    -1
-  } else if (isY)
-  {
-    1
-  } else{
-    0
-  }
-}
 
 library(xtable)
 
@@ -120,12 +110,12 @@ ui <- function () {
 server <- function(input, output, session) {
   xSide <- -1
   oSide <- 1
-  humanSide <- 0
-  computerSide <- 0
+  humanSide <- xSide
+  computerSide <- oSide
   xWins <- 0
   oWins <- 0
   ties <- 0
-  tree <- GenerateTable(1)
+  tree <- GenerateTable(oSide)
 
   IsMachineTurn <- function (board) {
     # length(which(board == computerSide)) > length(which(board == humanSide))
@@ -162,6 +152,16 @@ server <- function(input, output, session) {
     }
   }
   UpdateBoard <- function(input) {
+    GetSide <- function(isX, isY) {
+      if (isX) {
+        xSide
+      } else if (isY)
+      {
+        oSide
+      } else{
+        0
+      }
+    }
     reactive({
       board <- GenerateEmptyBoard()
       board[[1]] <- GetSide(input$Cell_1_1_X, input$Cell_1_1_O)
@@ -249,15 +249,38 @@ server <- function(input, output, session) {
   TreeMove <- function(tree, board, side) {
     bestMoveNode <- NULL
     bestValue <- 0
+    print(paste("treemove Side=", side))
+    print(DisplayBoard(board))
     for (node in tree$tree){
+      PrintNode(node)
       if (node$bestValue >= bestValue){
         bestMoveNode <- node
         bestValue <- node$bestValue
         }
     }
+    PrintNode(bestMoveNode)
     move <- (bestMoveNode$rootRow * 2) + bestMoveNode$rootCol
     board[[move]] <- side
-    list(board, move, bestMoveNode)
+    print("exit treemove")
+    list(localBoard=board, move=move, tree=bestMoveNode)
+  }
+
+  PrintNode <- function(node){
+    cat(
+      "level=",
+      node$level,
+      "rootPick=[",
+      node$rootRow,
+      node$rootCol,
+      "]",
+      "side=",
+      node$side,
+      " numSubNodes=",
+      length(node$tree),
+      " bestValue=",
+      node$bestValue,
+      "\n"
+    )
   }
 
   ComputerMove <-
@@ -269,10 +292,10 @@ server <- function(input, output, session) {
           IsMachineTurn(localBoard) && IsMovePossible(localBoard)) {
         # print(paste("Move happening: computerSide=", computerSide))
         x <- TreeMove(tree, localBoard, computerSide)
-        localBoard <- x[[1]]
-        move <- x[[2]]
+        localBoard <- x$localBoard
+        move <- x$move
         UpdateInputForMove(localBoard, move, computerSide)
-        x[[3]]
+        x
       }
     }
 
@@ -302,10 +325,17 @@ server <- function(input, output, session) {
 
   GetTree <- function(board,tree){
     found <- NULL
+    print("gettree")
+    print(DisplayBoard(board))
     for(node in tree$tree){
+      PrintNode(node)
       if (board[node$rootRow, node$rootCol] != 0){
         found <- node
       }
+    }
+    if (! is.null(found)){
+      PrintNode(found)
+      print("exit gettree")
     }
     found
   }
@@ -319,7 +349,9 @@ server <- function(input, output, session) {
     if (! is.null(localTree)){
       tree <<- localTree
       winner <- EvaluateBoard(localBoard)
-      tree <<- ComputerMove(winner, localBoard, computerSide, tree)
+      x <<- ComputerMove(winner, localBoard, computerSide, tree)
+      localBoard <- x$localBoard
+      tree <<- x$tree
       gameOver <- UpdateWins(winner, localBoard)
       if (gameOver) {
         # tic.ai <<- Train(winner)

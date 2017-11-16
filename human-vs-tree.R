@@ -115,7 +115,8 @@ server <- function(input, output, session) {
   xWins <- 0
   oWins <- 0
   ties <- 0
-  tree <- GenerateTable(oSide)
+  tree <- GenerateTable()
+  initialTree <- tree
 
   IsMachineTurn <- function (board) {
     # length(which(board == computerSide)) > length(which(board == humanSide))
@@ -148,7 +149,7 @@ server <- function(input, output, session) {
         humanSide <<- oSide
         computerSide <<- xSide
       }
-      print(paste("humanSide=", humanSide, "xSide=", xSide, "oSide=", oSide))
+      # print(paste("humanSide=", humanSide, "xSide=", xSide, "oSide=", oSide))
     }
   }
   UpdateBoard <- function(input) {
@@ -216,6 +217,7 @@ server <- function(input, output, session) {
 
   ResetGame <- function() {
     print("ResetGame")
+    tree <<- initialTree
     DisableWholeBoard(localBoard, FALSE)
     humanSide <<- 0
     computerSide <<- 0
@@ -248,39 +250,48 @@ server <- function(input, output, session) {
 
   TreeMove <- function(tree, board, side) {
     bestMoveNode <- NULL
-    bestValue <- 0
+    bestValue <- +Inf
     print(paste("treemove Side=", side))
     print(DisplayBoard(board))
     for (node in tree$tree){
       PrintNode(node)
-      if (node$bestValue >= bestValue){
+      if (node$bestValueOppX < bestValue){
         bestMoveNode <- node
-        bestValue <- node$bestValue
+        bestValue <- node$bestValueOppX
         }
     }
     PrintNode(bestMoveNode)
-    move <- (bestMoveNode$rootRow * 2) + bestMoveNode$rootCol
+    move <- CalculateMove(bestMoveNode$rootRow, bestMoveNode$rootCol)
     board[[move]] <- side
     print("exit treemove")
     list(localBoard=board, move=move, tree=bestMoveNode)
   }
 
-  PrintNode <- function(node){
-    cat(
-      "level=",
-      node$level,
-      "rootPick=[",
-      node$rootRow,
-      node$rootCol,
-      "]",
-      "side=",
-      node$side,
-      " numSubNodes=",
-      length(node$tree),
-      " bestValue=",
-      node$bestValue,
-      "\n"
-    )
+  CalculateMove <- function(r,c){
+    xxx <- ((c-1)*3)+r
+    # print(paste("  CalculateMove [", r, ",", c, "] move=", xxx))
+    xxx
+  }
+
+  PrintNode <- function(node, space=""){
+      cat(
+        space,
+        "level=",
+        node$level,
+        "rootPick=[",
+        node$rootRow,
+        node$rootCol,
+        "]",
+        "sideMadeThisMove=",
+        node$sideMadeThisMove,
+        " bestValueMeX=",
+        node$bestValueMeX,
+        " bestValueOppX=",
+        node$bestValueOppX,
+        " numSubNodes=",
+        length(node$tree),
+        "\n"
+      )
   }
 
   ComputerMove <-
@@ -325,8 +336,8 @@ server <- function(input, output, session) {
 
   GetTree <- function(board,tree){
     found <- NULL
-    print("gettree")
-    print(DisplayBoard(board))
+    # print("gettree")
+    # print(DisplayBoard(board))
     for(node in tree$tree){
       PrintNode(node)
       if (board[node$rootRow, node$rootCol] != 0){
@@ -334,8 +345,11 @@ server <- function(input, output, session) {
       }
     }
     if (! is.null(found)){
-      PrintNode(found)
-      print("exit gettree")
+      # PrintNode(found)
+      # print("exit gettree")
+    } else {
+      # PrintNode(tree)
+      # print("exit gettree no tree")
     }
     found
   }
@@ -343,15 +357,20 @@ server <- function(input, output, session) {
   board <- UpdateBoard(input)
 
   output$board <- renderTable({
+    print("*************start****************")
     localBoard <- board()
     SetHumanSide(localBoard)
     localTree <- GetTree(localBoard, tree)
     if (! is.null(localTree)){
       tree <<- localTree
       winner <- EvaluateBoard(localBoard)
-      x <<- ComputerMove(winner, localBoard, computerSide, tree)
-      localBoard <- x$localBoard
-      tree <<- x$tree
+      # print(paste("Winner=",winner))
+      if (winner == 0 && IsMovePossible(localBoard)){
+        x <<- ComputerMove(winner, localBoard, computerSide, tree)
+        localBoard <- x$localBoard
+        tree <<- x$tree
+        winner <- EvaluateBoard(localBoard)
+      }
       gameOver <- UpdateWins(winner, localBoard)
       if (gameOver) {
         # tic.ai <<- Train(winner)
@@ -359,6 +378,7 @@ server <- function(input, output, session) {
         DisableBoard(localBoard)
       }
     }
+    print("*********end****************")
     xtable(matrix(
       factor(
         localBoard,

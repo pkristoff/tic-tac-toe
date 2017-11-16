@@ -1,59 +1,97 @@
-GenerateTable <- function (mySide) {
+# terminology
+# X always goes first
+# meFirst means I am X
+# oppFirst means I am O
+
+GenerateTable <- function () {
   emptyBoard <- matrix(0, 3, 3)
+  x <- -1
+  o <- 1
 
   GenerateTree <-
     function(board,
-             sideMakingNextMove,
+             isXTurn, # turn for subnode
              level,
              curRow,
              curCol) {
-      sideMadeThisMove <- sideMakingNextMove * -1
+      if (isXTurn) {
+        sideMakingSubMove <- x
+      } else {
+        sideMakingSubMove <- o
+      }
       winner <- EvaluateBoard(board)
       if (winner == 0) {
-        bestValue = 0
+        if (isXTurn) { #subNode
+          bestValueMeX = -Inf
+          bestValueOppX = +Inf
+        } else {
+          bestValueMeX = +Inf
+          bestValueOppX = -Inf
+        }
         subNodes = list()
         for (rowNum in 1:3) {
           for (colNum in 1:3) {
             if (board[rowNum, colNum] == 0) {
               nextBoard = board
-              nextBoard[rowNum, colNum] <- sideMakingNextMove
-              subNode = GenerateTree(nextBoard,
-                                     sideMakingNextMove * -1,
+              nextBoard[rowNum, colNum] <- sideMakingSubMove
+              subNode = GenerateTree(nextBoard,!isXTurn,
                                      level + 1,
                                      rowNum,
                                      colNum)
               subNodes <- c(subNodes, list(subNode))
-              if (mySide == sideMadeThisMove) {
-
-                if (subNode$bestValue < bestValue)
-                  # print(paste("Min's turn level=", level, " bestValue=", bestValue, " subNode$bestValue=", subNode$bestValue))
-                  bestValue <<- subNode$bestValue
+              if (isXTurn) {
+                # maximizing player
+                if (subNode$bestValueMeX > bestValueMeX) {
+                  bestValueMeX <- subNode$bestValueMeX
+                }
+                # minimizing player
+                if (subNode$bestValueOppX < bestValueOppX) {
+                  bestValueOppX <- subNode$bestValueOppX
+                }
               } else {
-                # max's turn - min just moved
-                if (subNode$bestValue > bestValue)
-                  # print(paste("Max's turn level=", level, " bestValue=", bestValue, " subNode$bestValue=", subNode$bestValue))
-                  bestValue <<- subNode$bestValue
-              }
-              if (subNode$bestValue != 0) {
-                # print(paste("LOCAL level=", level, " bestValue=", bestValue, " subNode$bestValue=", subNode$bestValue))
+                # minimizing player
+                if (subNode$bestValueMeX < bestValueMeX) {
+                  bestValueMeX <- subNode$bestValueMeX
+                }
+                # maximizing player
+                if (subNode$bestValueOppX > bestValueOppX) {
+                  bestValueOppX <- subNode$bestValueOppX
+                }
               }
             }
           }
         }
-        if (bestValue != 0) {
-          print(paste("GLOBAL level=", level, " bestValue=", bestValue))
-        }
+        # if (bestValue != 0) {
+        #   print(paste("GLOBAL level=", level, " bestValue=", bestValue))
+        # }
         # if subNodes is empty then we ended in a draw.
-        CreateNode(board,
-                   level,
-                   sideMadeThisMove,
-                   curRow,
-                   curCol,
-                   bestValue,
-                   subNodes)
+        CreateNode(
+          board,
+          level,
+          sideMakingSubMove*-1,
+          curRow,
+          curCol,
+          bestValueMeX,
+          bestValueOppX,
+          subNodes
+        )
       } else {
         # leaf node with winner
-        CreateNode(board, level, sideMadeThisMove, curRow, curCol, winner, list())
+        if (! isXTurn) {
+          value = winner * -1
+        } else {
+          value = winner
+        }
+        # print(paste("Winner=", winner, " isXTurn=", isXTurn))
+        # print(DisplayBoard(board))
+        CreateNode(board,
+                   level,
+                   sideMakingSubMove*-1,
+                   curRow,
+                   curCol,
+                   value,
+                   value * -1,
+                   list())
       }
     }
   CreateNode <- function(board,
@@ -61,7 +99,8 @@ GenerateTable <- function (mySide) {
                          sideMadeThisMove,
                          rootRow,
                          rootCol,
-                         bestValue,
+                         bestValueMeX,
+                         bestValueOppX,
                          subNodes) {
     list(
       board = board,
@@ -70,8 +109,30 @@ GenerateTable <- function (mySide) {
       # the side that made this move (rootCol, rootRow)
       rootCol = rootCol,
       rootRow = rootRow,
-      bestValue = bestValue,
+      bestValueMeX = bestValueMeX,
+      bestValueOppX = bestValueOppX,
       tree = subNodes
+    )
+  }
+
+  PrintNode <- function(node, space = "") {
+    cat(
+      space,
+      "level=",
+      node$level,
+      "rootPick=[",
+      node$rootRow,
+      node$rootCol,
+      "]",
+      "sideMadeThisMove=",
+      node$sideMadeThisMove,
+      " bestValueMeX=",
+      node$bestValueMeX,
+      " bestValueOppX=",
+      node$bestValueOppX,
+      " numSubNodes=",
+      length(node$tree),
+      "\n"
     )
   }
 
@@ -99,7 +160,7 @@ GenerateTable <- function (mySide) {
         PrintTree(node$tree[[i]], append(space, "-"))
       }
     } else {
-      print(DisplayBoard(node$board))
+      # print(DisplayBoard(node$board))
       node$board
     }
   }
@@ -112,10 +173,11 @@ GenerateTable <- function (mySide) {
 
 
   node <- GenerateTree(emptyBoard,
-                       mySide,
+                       TRUE,
                        0,
                        0,
                        0)
+  PrintNode(node)
   node
 
 }

@@ -340,25 +340,25 @@ server <- function(input, output, session) {
 
   GetTree <- function(board, tree) {
     found <- NULL
-    print("gettree - begin tree")
-    PrintNode(tree)
-    print(DisplayBoard(board))
+    # print("gettree - begin tree")
+    # PrintNode(tree)
+    # print(DisplayBoard(board))
     for (node in tree$tree) {
       # PrintNode(node)
       if (board[node$rootRow, node$rootCol] != 0) {
         found <- node
       }
     }
-    if (!is.null(found)) {
+    # if (!is.null(found)) {
       # PrintNode(found)
-      print("exit gettree")
-    } else {
+      # print("exit gettree")
+    # } else {
       # if (tree$level != 0){
       #   vvv
       # }
       # PrintNode(tree)
-      print("exit gettree no tree")
-    }
+      # print("exit gettree no tree")
+    # }
     found
   }
   PrintMove <- function(node, whoMoved) {

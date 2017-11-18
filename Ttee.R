@@ -71,8 +71,8 @@ GenerateTable <- function () {
           sideMakingSubMove*-1,
           curRow,
           curCol,
-          bestValueMeX,
-          bestValueOppX,
+          bestValueMeX*0.5,
+          bestValueOppX*0.5,
           subNodes
         )
       } else {

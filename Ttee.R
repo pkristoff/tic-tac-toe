@@ -177,7 +177,7 @@ GenerateTable <- function () {
                        0,
                        0,
                        0)
-  PrintNode(node)
+  # PrintNode(node)
   node
 
 }

@@ -1,4 +1,5 @@
 
+
 # install.packages("shiny")
 library(shiny)
 # install.packages("shinyjs")
@@ -251,47 +252,50 @@ server <- function(input, output, session) {
   TreeMove <- function(tree, board, side) {
     bestMoveNode <- NULL
     bestValue <- +Inf
-    print(paste("treemove Side=", side))
-    print(DisplayBoard(board))
-    for (node in tree$tree){
-      PrintNode(node)
-      if (node$bestValueOppX < bestValue){
+    # print(paste("treemove Side=", side))
+    # print(DisplayBoard(board))
+    for (node in tree$tree) {
+      # PrintNode(node)
+      if (node$bestValueOppX < bestValue) {
         bestMoveNode <- node
         bestValue <- node$bestValueOppX
-        }
+      }
     }
-    PrintNode(bestMoveNode)
-    move <- CalculateMove(bestMoveNode$rootRow, bestMoveNode$rootCol)
+    # PrintNode(bestMoveNode)
+    move <-
+      CalculateMove(bestMoveNode$rootRow, bestMoveNode$rootCol)
     board[[move]] <- side
-    print("exit treemove")
-    list(localBoard=board, move=move, tree=bestMoveNode)
+    # print("exit treemove")
+    list(localBoard = board,
+         move = move,
+         tree = bestMoveNode)
   }
 
-  CalculateMove <- function(r,c){
-    xxx <- ((c-1)*3)+r
+  CalculateMove <- function(r, c) {
+    xxx <- ((c - 1) * 3) + r
     # print(paste("  CalculateMove [", r, ",", c, "] move=", xxx))
     xxx
   }
 
-  PrintNode <- function(node, space=""){
-      cat(
-        space,
-        "level=",
-        node$level,
-        "rootPick=[",
-        node$rootRow,
-        node$rootCol,
-        "]",
-        "sideMadeThisMove=",
-        node$sideMadeThisMove,
-        " bestValueMeX=",
-        node$bestValueMeX,
-        " bestValueOppX=",
-        node$bestValueOppX,
-        " numSubNodes=",
-        length(node$tree),
-        "\n"
-      )
+  PrintNode <- function(node, space = "") {
+    cat(
+      space,
+      "level=",
+      node$level,
+      "rootPick=[",
+      node$rootRow,
+      node$rootCol,
+      "]",
+      "sideMadeThisMove=",
+      node$sideMadeThisMove,
+      " bestValueMeX=",
+      node$bestValueMeX,
+      " bestValueOppX=",
+      node$bestValueOppX,
+      " numSubNodes=",
+      length(node$tree),
+      "\n"
+    )
   }
 
   ComputerMove <-
@@ -334,24 +338,53 @@ server <- function(input, output, session) {
     gameOver
   }
 
-  GetTree <- function(board,tree){
+  GetTree <- function(board, tree) {
     found <- NULL
-    # print("gettree")
-    # print(DisplayBoard(board))
-    for(node in tree$tree){
-      PrintNode(node)
-      if (board[node$rootRow, node$rootCol] != 0){
+    print("gettree - begin tree")
+    PrintNode(tree)
+    print(DisplayBoard(board))
+    for (node in tree$tree) {
+      # PrintNode(node)
+      if (board[node$rootRow, node$rootCol] != 0) {
         found <- node
       }
     }
-    if (! is.null(found)){
+    if (!is.null(found)) {
       # PrintNode(found)
-      # print("exit gettree")
+      print("exit gettree")
     } else {
+      # if (tree$level != 0){
+      #   vvv
+      # }
       # PrintNode(tree)
-      # print("exit gettree no tree")
+      print("exit gettree no tree")
     }
     found
+  }
+  PrintMove <- function(node, whoMoved) {
+    if (is.null(node)) {
+      cat("No Move by ", whoMoved, "\n")
+    } else {
+      cat(
+        "Move by ",
+        whoMoved,
+        " level=",
+        node$level,
+        "rootPick=[",
+        node$rootRow,
+        node$rootCol,
+        "]",
+        "sideMadeThisMove=",
+        node$sideMadeThisMove,
+        " bestValueMeX=",
+        node$bestValueMeX,
+        " bestValueOppX=",
+        node$bestValueOppX,
+        " numSubNodes=",
+        length(node$tree),
+        "\n"
+      )
+    }
   }
 
   board <- UpdateBoard(input)
@@ -361,15 +394,18 @@ server <- function(input, output, session) {
     localBoard <- board()
     SetHumanSide(localBoard)
     localTree <- GetTree(localBoard, tree)
-    if (! is.null(localTree)){
+    PrintMove(localTree, 'Human')
+    if (!is.null(localTree)) {
       tree <<- localTree
       winner <- EvaluateBoard(localBoard)
       # print(paste("Winner=",winner))
-      if (winner == 0 && IsMovePossible(localBoard)){
+      if (winner == 0 && IsMovePossible(localBoard)) {
         x <<- ComputerMove(winner, localBoard, computerSide, tree)
         localBoard <- x$localBoard
         tree <<- x$tree
+        # PrintNode(tree)
         winner <- EvaluateBoard(localBoard)
+        PrintMove(tree, 'Computer')
       }
       gameOver <- UpdateWins(winner, localBoard)
       if (gameOver) {

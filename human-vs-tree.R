@@ -251,12 +251,12 @@ server <- function(input, output, session) {
 
   TreeMove <- function(tree, board, side) {
     bestMoveNode <- NULL
-    bestValue <- +Inf
+    bestValue <- -Inf
     # print(paste("treemove Side=", side))
     # print(DisplayBoard(board))
     for (node in tree$tree) {
-      # PrintNode(node)
-      if (node$bestValueOppX < bestValue) {
+      PrintNode(node)
+      if (node$bestValueOppX > bestValue) {
         bestMoveNode <- node
         bestValue <- node$bestValueOppX
       }

@@ -26,10 +26,10 @@ GameTreeConv <- function (initMove) {
     } else if (initMove == 5 || initMove == 6 || initMove == 9) {
       c(3, 6, 9, 2, 5, 8, 1, 4, 7)
     }
-  return(function(conversion, value){
-    if (conversion == 'toTree'){
+  return(function(conversion, value) {
+    if (conversion == 'toTree') {
       return(gameTreeConversionMapping[value])
-    } else if (conversion == 'toGame'){
+    } else if (conversion == 'toGame') {
       return(which(gameTreeConversionMapping == value))
     } else {
       return(NULL)
@@ -37,9 +37,62 @@ GameTreeConv <- function (initMove) {
   })
 }
 
+MiniMax <- function(board, player, tree) {
+  winner = EvaluateBoard(board)
+  if (winner == player)
+    return(list(childValue = 10, child = tree))
+  if (winner == -player)
+    return(list(childValue = -10, child = tree))
+  if (winner == 0 &&
+      tree$isLeaf)
+    return(list(childValue = 0, child = tree))
+  isMax = player != tree$player
+  bestValue = ifelse(isMax, -Inf, +Inf)
+  bestChild <- NULL
+  for (child in tree$children) {
+    board[GameTreeConv.treeToGame(child$f)] <- child$player
+    result = MiniMax(board, player, child)
+    childValue = result$childValue * 0.5
+    board[GameTreeConv.treeToGame(child$f)] <- 0
+    if (isMax) {
+      if (childValue > bestValue) {
+        bestValue <- childValue
+        bestChild <- child
+      }
+    } else {
+      if (childValue < bestValue) {
+        bestValue <- childValue
+        bestChild <- child
+      }
+    }
+  }
+  list(childValue = bestValue, child = bestChild)
+}
+# Checking whether somebody has won
+EvaluateBoard <- function(board) {
+  FlipMatrix <- function(m) {
+    apply(m, 2, rev)
+  }
+  mboard <- matrix(board, ncol = 3, nrow = 3)
+  sums <- c(colSums(mboard),
+            rowSums(mboard),
+            sum(diag(mboard)),
+            sum(diag(FlipMatrix(mboard))))
+
+  if (max(sums) == 3) {
+    return(1)
+  }
+  if (min(sums) == -3) {
+    return(-1)
+  }
+  0
+}
+
+
 # Main game engine
 tic.tac.toe <-
-  function(ttt, valueType='greater2',
+  function(ttt,
+           valueType = 'greater2',
            player1 = "human",
            player2 = "computer") {
     # Draw the game board
@@ -80,122 +133,6 @@ tic.tac.toe <-
         lines(c(2, 28), c(28, 2), lwd = 10, col = "red")
       if (abs(diag2) == 3)
         lines(c(2, 28), c(2, 28), lwd = 10, col = "red")
-    }
-
-    FlipMatrix <- function(m) {
-      apply(m, 2, rev)
-    }
-
-    # Checking whether somebody has won
-    EvaluateBoard <- function(board) {
-      mboard <- matrix(board, ncol = 3, nrow = 3)
-      sums <- c(colSums(mboard),
-                rowSums(mboard),
-                sum(diag(mboard)),
-                sum(diag(FlipMatrix(mboard))))
-
-      if (max(sums) == 3) {
-        return(1)
-      }
-      if (min(sums) == -3) {
-        return(-1)
-      }
-      0
-    }
-
-    minimax2 <- function(board, player, tree){
-      winner = EvaluateBoard(board)
-      if (winner == player) return(list(childValue = 10, child = tree))
-      if (winner == -player) return(list(childValue = -10, child = tree))
-      if (winner == 0 && tree$isLeaf) return(list(childValue = 0, child = tree))
-      isMax = player != tree$player
-      bestValue = ifelse(isMax, -Inf, +Inf)
-      bestChild <- NULL
-      for (child in tree$children) {
-        board[GameTreeConv.treeToGame(child$f)] <- child$player
-        result = minimax2(board, player, child)
-        childValue = result$childValue*0.5
-        # if (child$level == currentLevel+1){
-        #   print(paste("child=", child$levelName, " move=", GameTreeConv.treeToGame(child$f), "f=", child$f, " isMax=", isMax, "childValue=", childValue))
-        # }
-        board[GameTreeConv.treeToGame(child$f)] <- 0
-        if (isMax){
-          if (childValue > bestValue){
-            bestValue <- childValue
-            bestChild <- child
-          }
-        } else {
-          if (childValue < bestValue){
-            bestValue <- childValue
-            bestChild <- child
-          }
-        }
-      }
-      list(childValue = bestValue, child = bestChild)
-    }
-
-    minimax <- function(game, player, tree, valueType='greater2') {
-      PrintNode(tree, "Minimax-tree")
-      print(paste("player=", player, " level=", tree$level))
-      bestWeighted(valueType, tree, child)
-    }
-    bestWeighted <- function(valueType, tree, child) {
-      bestValue <- ifelse(valueType == 'greater1' || valueType == 'greater2', -Inf, +Inf)
-      bestChild <- NULL
-      for (child in tree$children) {
-        PrintNode(child, "Minimax-child")
-        if (valueType == 'greater1'){
-          if (child$wp1 > bestValue) {
-            bestValue <- child$wp1
-            bestChild <- child
-          }
-        } else if (valueType == 'greater2'){
-          if (child$wp2 > bestValue) {
-            bestValue <- child$wp2
-            bestChild <- child
-          }
-        } else if (valueType == 'less1'){
-          if (child$wp1 < bestValue) {
-            bestValue <- child$wp1
-            bestChild <- child
-          }
-        } else if (valueType == 'less2'){
-          if (child$wp2 < bestValue) {
-            bestValue <- child$wp2
-            bestChild <- child
-          }
-        }
-      }
-      list(treeMove = bestChild$f, child = bestChild)
-    }
-    bestPoint <- function(valueType, tree, child) {
-      bestValue <- ifelse(valueType == 'greater1' || valueType == 'greater2', -Inf, +Inf)
-      bestChild <- NULL
-      for (child in tree$children) {
-        PrintNode(child, "Minimax-child")
-        if (valueType == 'greater1'){
-          if (child$points1 > bestValue) {
-            bestValue <- child$points1
-            bestChild <- child
-          }
-        } else if (valueType == 'greater2'){
-          if (child$points2 > bestValue) {
-            bestValue <- child$points2
-            bestChild <- child
-          }
-        } else if (valueType == 'less1'){
-          if (child$points1 < bestValue) {
-            bestValue <- child$points1
-            bestChild <- child
-          }
-        } else if (valueType == 'less2'){
-          if (child$points2 < bestValue) {
-            bestValue <- child$points2
-            bestChild <- child
-          }
-        }
-      }
-      list(treeMove = bestChild$f, child = bestChild)
     }
 
     # Human player enters a move
@@ -243,7 +180,7 @@ tic.tac.toe <-
       )
     }
 
-    InitilizeGameTreeConversion <- function(initialMove){
+    InitilizeGameTreeConversion <- function(initialMove) {
       GameTreeConversion <<- GameTreeConv(move)
     }
     GameTreeConversion = NULL
@@ -276,30 +213,24 @@ tic.tac.toe <-
           if (child$f == treeMove) {
             xxx = child
             currentLevel = child$level
+            break
           }
         }
         currentNode <- xxx
       }
       else {
-        # Computer player
-        # mm <- minimax(game, player, currentNode, valueType)
-        # currentNode = mm$child
-        # currentLevel = currentNode$level
-        # move <- GameTreeConv.treeToGame(mm$treeMove)
-        # print(paste("Move=", move, " treeMove=", mm$treeMove))
-        mm2 <- minimax2(game, player, currentNode)
-        currentNode <- mm2$child
+        mm <- MiniMax(game, player, currentNode)
+        currentNode <- mm$child
         currentLevel = currentNode$level
         move <- GameTreeConv.treeToGame(currentNode$f)
         print(paste("Move=", move, " treeMove=", currentNode$f))
       }
       game[move] <- player # Change board
       draw.board(game)
-      #winner <- max(eval.game(game, 1), abs(eval.game(game, -1))) == 6 # Winner, winner, chicken dinner?
       winner <- EvaluateBoard(game)
       player <- -player # Change player
     }
   }
 # ttt <- TTTTree()
 # print(system.time(ttt <- data("ttt", package="CreateTTTTree")))
-tic.tac.toe(ttt)
+# tic.tac.toe(ttt)

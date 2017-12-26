@@ -15,6 +15,19 @@
 library(data.tree)
 library(CreateTTTTree)
 
+#' The data.tree representing all games in tic-tac-toe, takes advantage of rotating
+#' the board 90 degrees is the exact same board.  Based on initMove this function sets the translation
+#' array: gameTreeConversionMapping.
+#'
+#' @param initMove An integer.  The human's first click on the board.
+#'
+#' @return a function that takes two parameters:
+#'     conversion: String ['toTree', 'toGame']
+#'     value: Integer The value to be converted.
+#'
+#' @examples
+#' GameTreeConv(5)
+#'
 GameTreeConv <- function (initMove) {
   gameTreeConversionMapping <<-
     if (initMove == 5 || initMove == 7 || initMove == 8) {
@@ -37,6 +50,19 @@ GameTreeConv <- function (initMove) {
   })
 }
 
+#' Implements the minimax algorithm
+#'
+#' @param board: vector: the game board.
+#' @param player: integer: The player who's move it is.
+#' @param player: integer: The player who's move it is.
+#'
+#' @return a list:
+#'   childValue: integer: The chosen value for the children.
+#'   child: child of tree: corresponds to bestValu
+#'
+#' @examples
+#' MiniMax(rep(1:9), 1, tree)
+#'
 MiniMax <- function(board, player, tree) {
   winner = EvaluateBoard(board)
   if (winner == player)
@@ -68,7 +94,20 @@ MiniMax <- function(board, player, tree) {
   }
   list(childValue = bestValue, child = bestChild)
 }
-# Checking whether somebody has won
+
+
+#' Implements the minimax algorithm
+#'
+#' @param board: vector: the game board.
+#'
+#' @return an integer:
+#'   0:  no one has one
+#'   1:  player 1 has won
+#'   -1: player -1 has won
+#'
+#' @examples
+#' EvaluateBoard(rep(1:9))
+#'
 EvaluateBoard <- function(board) {
   FlipMatrix <- function(m) {
     apply(m, 2, rev)
@@ -88,14 +127,33 @@ EvaluateBoard <- function(board) {
   0
 }
 
-
-# Main game engine
+#' Main game
+#'
+#' @param ttt: data.tree: the full list of moves for every game.
+#' @param player1: String: the optional name of player1.
+#' @param player2: String: the optional name of player2.
+#'
+#' @return an integer:
+#'   0:  no one has one
+#'   1:  player 1 has won
+#'   -1: player -1 has won
+#'
+#' @examples
+#' ttt <- TTTTree()
+#' tic.tac.toe(ttt)
+#'
 tic.tac.toe <-
   function(ttt,
-           valueType = 'greater2',
            player1 = "human",
            player2 = "computer") {
-    # Draw the game board
+    #' Draw the game board - using plots
+    #'
+    #' @param game: vector of length 9
+    #'
+    #' @examples
+    #' ttt <- TTTTree()
+    #' draw.board(rep(1:9))
+    #'
     draw.board <- function(game) {
       xo <- c("X", " ", "O") # Symbols
       par(mar = rep(1, 4))
@@ -136,6 +194,22 @@ tic.tac.toe <-
     }
 
     # Human player enters a move
+
+    #' Main game
+    #'
+    #' @param ttt: data.tree: the full list of moves for every game.
+    #' @param player1: String: the optional name of player1.
+    #' @param player2: String: the optional name of player2.
+    #'
+    #' @return an integer:
+    #'   0:  no one has one
+    #'   1:  player 1 has won
+    #'   -1: player -1 has won
+    #'
+    #' @examples
+    #' ttt <- TTTTree()
+    #' tic.tac.toe(ttt)
+    #'
     move.human <- function(game) {
       text(4,
            0,
@@ -153,6 +227,15 @@ tic.tac.toe <-
       return (move)
     }
 
+    #' print a node in the tree.
+    #'
+    #' @param node: data.tree: the full list of moves for every game.
+    #' @param label: String: the optional description of which node this represents
+    #'
+    #' @examples
+    #' PrintNode(node)
+    #' tic.tac.toe(ttt, label='child')
+    #'
     PrintNode <- function(node, label = "") {
       print(
         paste(
@@ -168,27 +251,12 @@ tic.tac.toe <-
           node$f,
           " player=",
           node$player,
-          # " points1=",
-          # node$points1,
-          # " points2=",
-          # node$points2,
           " wp1=",
           node$wp1,
           " wp2=",
           node$wp2
         )
       )
-    }
-
-    InitilizeGameTreeConversion <- function(initialMove) {
-      GameTreeConversion <<- GameTreeConv(move)
-    }
-    GameTreeConversion = NULL
-    GameTreeConv.gameToTree <<- function (gameCell) {
-      GameTreeConversion('toTree', gameCell)
-    }
-    GameTreeConv.treeToGame <<- function (treeCell) {
-      GameTreeConversion('toGame', treeCell)
     }
 
     game <- rep(0, 9) # Empty board

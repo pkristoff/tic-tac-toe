@@ -3,7 +3,6 @@
 context("GameTreeConv")
 
 test_that("Test that conversions between game and tree work correctly.", {
-  # conversionMap145 = c(7, 4, 1, 8, 5, 2, 9, 6, 3)
 
   for (i in 1:9) {
     conversion <- GameTreeConv(i)

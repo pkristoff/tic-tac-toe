@@ -9,7 +9,39 @@ GenerateShinyBoard <- function(data) {
   matrix(data, ncol = board.size, nrow = board.size)
 }
 
+library(CreateTTTTree)
 library(xtable)
+
+# =================common=================
+board.size = 3
+
+# Checking whether somebody has won
+EvaluateBoard <- function(board) {
+
+  FlipMatrix <- function(m) {
+    apply(m, 2, rev)
+  }
+  sums <- c(colSums(board),
+            rowSums(board),
+            sum(diag(board)),
+            sum(diag(FlipMatrix(board))))
+
+  if (max(sums) == board.size) {
+    return(1)
+  }
+  if (min(sums) == -board.size) {
+    return(-1)
+  }
+  0
+}
+GenerateEmptyBoard <- function() {
+  matrix(0, ncol = board.size, nrow = board.size)
+}
+
+IsMovePossible <- function(board) {
+  length(which(board == 0)) > 0
+}
+# =======================================
 
 cbCol1 <- 3
 cbCol2 <- 3
@@ -426,5 +458,6 @@ server <- function(input, output, session) {
     ))
   })
 }
+
 
 shinyApp(ui = ui(), server = server)

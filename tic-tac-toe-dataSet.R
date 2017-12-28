@@ -26,9 +26,9 @@ library(CreateTTTTree)
 #'     value: Integer The value to be converted.
 #'
 #' @examples
-#' GameTreeConv(5)
+#' InitilizeGameTreeConversion(5)
 #'
-GameTreeConv <- function (initMove) {
+InitilizeGameTreeConversion <- function (initMove) {
   gameTreeConversionMapping <<-
     if (initMove == 5 || initMove == 7 || initMove == 8) {
       c(1, 2, 3, 4, 5, 6, 7, 8, 9)
@@ -49,6 +49,8 @@ GameTreeConv <- function (initMove) {
     }
   })
 }
+
+GameTreeConversion <- NULL
 
 #' Implements the minimax algorithm
 #'
@@ -76,10 +78,10 @@ MiniMax <- function(board, player, tree) {
   bestValue = ifelse(isMax, -Inf, +Inf)
   bestChild <- NULL
   for (child in tree$children) {
-    board[GameTreeConv.treeToGame(child$f)] <- child$player
+    board[GameTreeConversion('toGame', child$f)] <- child$player
     result = MiniMax(board, player, child)
     childValue = result$childValue * 0.5
-    board[GameTreeConv.treeToGame(child$f)] <- 0
+    board[GameTreeConversion('toGame', child$f)] <- 0
     if (isMax) {
       if (childValue > bestValue) {
         bestValue <- childValue
@@ -273,7 +275,7 @@ tic.tac.toe <-
         move <- move.human(game)
         if (is.null(GameTreeConversion))
           GameTreeConversion <<- InitilizeGameTreeConversion(move)
-        treeMove <- GameTreeConv.gameToTree(move)
+        treeMove <- GameTreeConversion('toTree', move)
         # print(paste("Move=", move, " treeMove=", treeMove))
         xxx <- NULL
         for (child in currentNode$children) {
@@ -290,7 +292,7 @@ tic.tac.toe <-
         mm <- MiniMax(game, player, currentNode)
         currentNode <- mm$child
         currentLevel = currentNode$level
-        move <- GameTreeConv.treeToGame(currentNode$f)
+        move <- GameTreeConversion('toGame', currentNode$f)
         print(paste("Move=", move, " treeMove=", currentNode$f))
       }
       game[move] <- player # Change board

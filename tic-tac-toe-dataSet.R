@@ -111,22 +111,8 @@ MiniMax <- function(board, player, tree) {
 #' EvaluateBoard(rep(1:9))
 #'
 EvaluateBoard <- function(board) {
-  FlipMatrix <- function(m) {
-    apply(m, 2, rev)
-  }
   mboard <- matrix(board, ncol = 3, nrow = 3)
-  sums <- c(colSums(mboard),
-            rowSums(mboard),
-            sum(diag(mboard)),
-            sum(diag(FlipMatrix(mboard))))
-
-  if (max(sums) == 3) {
-    return(1)
-  }
-  if (min(sums) == -3) {
-    return(-1)
-  }
-  0
+  tttShiny::EvaluateBoard(mboard)
 }
 
 #' Main game
@@ -267,7 +253,6 @@ tic.tac.toe <-
     players <- c(player1, player2)
     draw.board(game)
     currentNode <- ttt
-    currentLevel <- 0
     while (0 %in% game && !winner) {
       # Keep playing until win or full board
       if (players[(player + 3) %% 3] == "human") {
@@ -282,8 +267,7 @@ tic.tac.toe <-
           # PrintNode(child, 'Human')
           if (child$f == treeMove) {
             xxx = child
-            currentLevel = child$level
-            break
+            break()
           }
         }
         currentNode <- xxx
@@ -291,7 +275,6 @@ tic.tac.toe <-
       else {
         mm <- MiniMax(game, player, currentNode)
         currentNode <- mm$child
-        currentLevel = currentNode$level
         move <- GameTreeConversion('toGame', currentNode$f)
         print(paste("Move=", move, " treeMove=", currentNode$f))
       }

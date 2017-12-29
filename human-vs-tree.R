@@ -5,6 +5,14 @@ library(xtable)
 
 board.size = tttShiny::BoardSize()
 
+#' shiny server
+#'
+#' @param input: shiny input
+#' @param output: shiny output
+#' @param session: shiny session
+#'
+#' @examples
+#'
 server <- function(input, output, session) {
   xSide <- -1
   oSide <- 1
@@ -30,6 +38,10 @@ server <- function(input, output, session) {
     }
   }
 
+  #' reset game
+  #'
+  #' @examples
+  #'
   ResetGame <- function() {
     print("ResetGame")
     tree <<- initialTree
@@ -47,6 +59,16 @@ server <- function(input, output, session) {
     ResetGame()
   })
 
+  #' convert row and column to a location in the localBoard.
+  #'
+  #' @param tree: tree representing the remaining possible moves for the game
+  #' @param localBoard: Vector 1:9
+  #' @param side: Integer: 1,-1
+  #'
+  #' @return List: localBoard, move, childTree
+  #'
+  #' @examples
+  #'
   TreeMove <- function(tree, board, side) {
     bestMoveNode <- NULL
     bestValue <- -Inf
@@ -69,12 +91,32 @@ server <- function(input, output, session) {
          tree = bestMoveNode)
   }
 
+  #' convert row and column to a location in the localBoard.
+  #'
+  #' @param r: Integer: 1:3
+  #' @param c: Integer: 1:3
+  #'
+  #' @return Integer  1:9 location in localBoard.
+  #'
+  #' @examples
+  #'
   CalculateMove <- function(r, c) {
     xxx <- ((c - 1) * 3) + r
     # print(paste("  CalculateMove [", r, ",", c, "] move=", xxx))
     xxx
   }
 
+  #' compute computer move.
+  #'
+  #' @param winner: Integer: 1,-1  Who won the name
+  #' @param localBoard: Vector 1:9
+  #' @param computerSide: Integer: 1,-1
+  #' @param tree: tree representing the remaining possible moves for the game
+  #'
+  #' @return List  localBoard, move, tree for move
+  #'
+  #' @examples
+  #'
   ComputerMove <-
     function(winner,
              localBoard,
@@ -112,6 +154,15 @@ server <- function(input, output, session) {
       }
     }
 
+  #' Update wins by X and O.  Also, show ties.
+  #'
+  #' @param winner: Integer: 1,-1  Who won the name
+  #' @param localBoard: Vector 1:9
+  #'
+  #' @return Boolean gameOver
+  #'
+  #' @examples
+  #'
   UpdateWins <- function(winner, localBoard) {
     gameOver <- FALSE
     if (winner != 0) {
@@ -136,15 +187,26 @@ server <- function(input, output, session) {
     gameOver
   }
 
-  GetTree <- function(board, tree) {
+  #' Find the child node of the current tree that
+  #' the human has made.
+  #'
+  #' @param localBoard: Vector 1:9
+  #' @param tree: represting the last move by computer before human move
+  #'
+  #' @return child tree
+  #'
+  #' @examples
+  #'
+  GetTree <- function(localBoard, tree) {
     found <- NULL
     # print("gettree - begin tree")
     # PrintNode(tree)
     # print(DisplayBoard(board))
     for (node in tree$tree) {
       # PrintNode(node)
-      if (board[node$rootRow, node$rootCol] != 0) {
+      if (localBoard[node$rootRow, node$rootCol] != 0) {
         found <- node
+        break()
       }
     }
     found
@@ -167,7 +229,7 @@ server <- function(input, output, session) {
         localBoard <- x$localBoard
         tree <<- x$tree
         # PrintNode(tree)
-        winner <- EvaluateBoard(localBoard)
+        winner <- tttShiny::EvaluateBoard(localBoard)
         CreateTTTTree::PrintMove(tree, 'Computer')
       }
       gameOver <- UpdateWins(winner, localBoard)
